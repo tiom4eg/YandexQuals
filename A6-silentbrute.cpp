@@ -57,28 +57,45 @@ struct fig {
     int diag(int d) { return d ? (x - y) : (x + y); } // OK
     bool same(fig o, int d) { return diag(d) == o.diag(d); } // OK
     bool operator<(fig o) { return (diag(0) == o.diag(0)) ? (diag(1) < o.diag(1)) : (diag(0) < o.diag(0)); } // OK
-    void shift(int d, int k) { // moves by k on d-diag, OK
-        if (won) return;
-        if (!k) return;
-        if (ops++ == 25) {
-            cout << "move limit exceeded" << endl;
-            exit(0);
-        }
-        //cout << "algo: " << x << ' ' << y << ", diags: " << diag(0) << ' ' << diag(1) << " | ";
-        x += k, y += (d ? 1 : -1) * k;
-        //cout << x << ' ' << y << ", diags: " << diag(0) << ' ' << diag(1) << endl;
-        auto_interact();
-        //cin >> ax >> ay >> kx >> ky;
-        if (!ax && !ay && !kx && !ky) won = 1;
-    }
-    void move_to(int d, int k) { shift(!d, (k - diag(d)) / 2); } // moves figure to d-diag with value k, OK
-    void jump_to(int k) { // jump to 0-diag with value k saving the same x coord, OK
-        int x = diag(0);
-        shift(1, (k - x) / 2), shift(0, (x - k) / 2);
-    }
+    bool operator==(fig o) { return (x == o.x) && (y == o.y); }
 };
 
 vector <fig> a[2];
+
+void shift(fig& f, int d, int k) { // moves by k on d-diag, OK
+    if (won) return;
+    if (!k) return;
+    EACH(e, a[0]) if (!(f == e) && f.diag(d) == e.diag(d) && e.x >= min(f.x, f.x + k) && e.x <= max(f.x, f.x + k)) {
+        cout << "move collision" << endl;
+        EACH(e, a[0]) cout << e.x << ' ' << e.y << endl;
+        EACH(e, a[1]) cout << e.x << ' ' << e.y << endl;
+        cout << "---" << endl;
+        cout << f.x << ' ' << f.y << ' ' << f.x + k << ' ' << f.y + (d ? 1 : -1) * k << endl;
+        exit(0);
+    }
+    EACH(e, a[1]) if (!(f == e) && f.diag(d) == e.diag(d) && e.x >= min(f.x, f.x + k) && e.x <= max(f.x, f.x + k)) {
+        cout << "move collision" << endl;
+        EACH(e, a[0]) cout << e.x << ' ' << e.y << endl;
+        EACH(e, a[1]) cout << e.x << ' ' << e.y << endl;
+        cout << "---" << endl;
+        cout << f.x << ' ' << f.y << ' ' << f.x + k << ' ' << f.y + (d ? 1 : -1) * k << endl;
+        exit(0);
+    }
+    /*if (ops++ == 25) {
+        cout << "move limit exceeded" << endl;
+        exit(0);
+    }*/
+    ++ops;
+    f.x += k, f.y += (d ? 1 : -1) * k;
+    auto_interact();
+    if (!ax && !ay && !kx && !ky) won = 1;
+}
+
+void move_to(fig& f, int d, int k) { shift(f, !d, (k - f.diag(d)) / 2); } // moves figure to d-diag with value k, OK
+void jump_to(fig& f, int k) { // jump to 0-diag with value k saving the same x coord, OK
+    int x = f.diag(0);
+    shift(f, 1, (k - x) / 2), shift(f, 0, (x - k) / 2);
+}
 
 void auto_interact() {
     FOR(dx, -1, 2) FOR(dy, -1, 2) if (dx != 0 || dy != 0) {
@@ -100,68 +117,69 @@ void auto_interact() {
 }
 
 
+
 int solve() {
     if (sz(a[0]) < 2 || sz(a[1]) < 2) return 0;
     /// phase 1 (2 moves max)
     int f = (sz(a[0]) > sz(a[1]));
     if (f) swap(a[0], a[1]); // we need to ensure that 2 figures of same color are secured first
     sort(all(a[0]));
-    if (!a[0][0].same(a[0][1], 0) && !a[0][0].same(a[0][1], 1)) a[0][1].move_to(0, a[0][0].diag(0));
+    if (!a[0][0].same(a[0][1], 0) && !a[0][0].same(a[0][1], 1)) move_to(a[0][1], 0, a[0][0].diag(0));
     if (won) return 0;
     FOR(i, 0, 3) if (kx == a[1][i].x && ky == a[1][i].y) a[1].erase(a[1].begin() + i); // if king eaten smth
     sort(all(a[1]));
-    if (!a[1][0].same(a[1][1], 0) && !a[1][0].same(a[1][1], 1)) a[1][1].move_to(0, a[1][0].diag(0));
+    if (!a[1][0].same(a[1][1], 0) && !a[1][0].same(a[1][1], 1)) move_to(a[1][1], 0, a[1][0].diag(0));
     if (won) return 0;
     if (f) swap(a[0], a[1]);
     sort(all(a[0])), sort(all(a[1]));
     /// phase 2 (7 moves max)
-    a[0][0].move_to((a[0][0].diag(0) == a[0][1].diag(0)), -100000000);
+    move_to(a[0][0], (a[0][0].diag(0) == a[0][1].diag(0)), -100000000);
     if (won) return 0;
-    a[0][1].move_to((a[0][0].diag(0) == a[0][1].diag(0)), -10000000);
+    move_to(a[0][1], (a[0][0].diag(0) == a[0][1].diag(0)), -10000000);
     if (won) return 0;
-    a[0][1].move_to((a[0][0].diag(0) != a[0][1].diag(0)), a[0][1].diag(a[0][0].diag(0) != a[0][1].diag(0)) - 1000000);
+    move_to(a[0][1], (a[0][0].diag(0) != a[0][1].diag(0)), a[0][1].diag(a[0][0].diag(0) != a[0][1].diag(0)) - 1000000);
     if (won) return 0;
-    a[1][0].move_to((a[1][0].diag(0) == a[1][1].diag(0)), -100000001);
+    move_to(a[1][0], (a[1][0].diag(0) == a[1][1].diag(0)), -100000001);
     if (won) return 0;
-    a[1][1].move_to((a[1][0].diag(0) == a[1][1].diag(0)), -10000001);
+    move_to(a[1][1], (a[1][0].diag(0) == a[1][1].diag(0)), -10000001);
     if (won) return 0;
-    a[1][1].move_to((a[1][0].diag(0) != a[1][1].diag(0)), a[1][1].diag(a[1][0].diag(0) != a[1][1].diag(0)) - 1000000);
+    move_to(a[1][1], (a[1][0].diag(0) != a[1][1].diag(0)), a[1][1].diag(a[1][0].diag(0) != a[1][1].diag(0)) - 1000000);
     if (won) return 0;
     // third is useless and may fuck us up
     if (sz(a[0]) > 2) {
-        a[0][2].move_to(0, 200000000);
+        move_to(a[0][2], 0, 200000000);
         if (won) return 0;
     }
     if (sz(a[1]) > 2) {
-        a[1][2].move_to(0, 200000001);
+        move_to(a[1][2], 0, 200000001);
         if (won) return 0;
     }
-    /// phase 3 (block by 0-diag, 28 moves max)
+    /// phase 3 (block by 0-diag, ?? moves max)
     int d0 = kx + ky;
-    int l = d0 - 5;
-    a[d0 & 1][0].jump_to(d0 - 4);
+    int l = d0 - 8;
+    jump_to(a[!(d0 & 1)][0], d0 - 7);
     if (won) return 0;
-    a[!(d0 & 1)][0].jump_to(d0 - 5);
+    jump_to(a[d0 & 1][0], d0 - 8);
     if (won) return 0;
     d0 = kx + ky;
-    int r = d0 + 5;
-    a[d0 & 1][1].jump_to(d0 + 4);
+    int r = d0 + 8;
+    jump_to(a[!(d0 & 1)][1], d0 + 7);
     if (won) return 0;
-    a[!(d0 & 1)][1].jump_to(d0 + 5);
+    jump_to(a[d0 & 1][1], d0 + 8);
     if (won) return 0;
     while (l + 4 < r) {
-        if (kx + ky > l + 2) a[l & 1][0].shift(1, 1), ++l;
-        else a[r & 1][1].shift(1, -1), --r;
+        if (kx + ky > l + 2) shift(a[l & 1][0], 1, 1), ++l;
+        else shift(a[r & 1][1], 1, -1), --r;
         if (won) return 0;
     }
     /// phase 4 (block by 1-diag, 3 moves max)
     int col = (kx + ky) & 1;
-    a[col][0].move_to(1, (kx - ky) - 2); // block bottom
+    move_to(a[col][0], 1, (kx - ky) - 2); // block bottom
     if (won) return 0;
-    a[col][1].move_to(1, (kx - ky) + 2); // block top
+    move_to(a[col][1], 1, (kx - ky) + 2); // block top
     if (won) return 0;
-    a[col][1].move_to(1, (kx - ky) + 2); // stalemate
-    //cout << ops << endl;
+    move_to(a[col][1], 1, (kx - ky) + 2); // stalemate
+    cout << ops << endl;
     if (won) return 0;
     return 1;
 }
@@ -173,24 +191,24 @@ signed main() {
         a[0].clear(), a[1].clear();
         vi xs(5), ys(5);
         FOR(i, 0, 5) {
-            int x = (rng() % 2000001) - 10, y = (rng() % 2000001) - 10;
+            int x = (rng() % 6) - 2, y = (rng() % 6) - 2;
             while (true) {
                 int f = 1;
                 FOR(j, 0, i) if (x == xs[j] && y == ys[j]) f = 0;
                 if (f) break;
-                x = (rng() % 2000001) - 10, y = (rng() % 2000001) - 10;
+                x = (rng() % 6) - 2, y = (rng() % 6) - 2;
             }
             xs[i] = x, ys[i] = y;
             fig f(x, y);
             a[f.color()].pb(f);
         }
-        int skx = (rng() % 2000001) - 10, sky = (rng() % 2000001) - 10;
+        int skx = (rng() % 6) - 2, sky = (rng() % 6) - 2;
         while (true) {
             int f = 1;
             EACH(e, a[0]) if (skx + sky == e.diag(0) || skx - sky == e.diag(1)) f = 0;
-            EACH(e, a[0]) if (skx + sky == e.diag(0) || skx - sky == e.diag(1)) f = 0;
+            EACH(e, a[1]) if (skx + sky == e.diag(0) || skx - sky == e.diag(1)) f = 0;
             if (f) break;
-            skx = (rng() % 2000001) - 10, sky = (rng() % 2000001) - 10;
+            skx = (rng() % 6) - 2, sky = (rng() % 6) - 2;
         }
         kx = skx, ky = sky;
         if (solve()) {
