@@ -59,6 +59,7 @@ struct fig {
     bool operator<(fig o) { return (diag(0) == o.diag(0)) ? (diag(1) < o.diag(1)) : (diag(0) < o.diag(0)); } // OK
     void shift(int d, int k) { // moves by k on d-diag, OK
         if (won) return;
+        if (!k) return;
         //cout << "algo: " << x << ' ' << y << ", diags: " << diag(0) << ' ' << diag(1) << " | ";
         x += k, y += (d ? 1 : -1) * k;
         //cout << x << ' ' << y << ", diags: " << diag(0) << ' ' << diag(1) << endl;
@@ -69,7 +70,8 @@ struct fig {
     void move_to(int d, int k) { shift(!d, (k - diag(d)) / 2); } // moves figure to d-diag with value k, OK
     void jump_to(int k) { // jump to 0-diag with value k saving the same x coord, OK
         int x = diag(0);
-        shift(1, (k - x) / 2), shift(0, (x - k) / 2);
+        if (x < k) shift(0, (x - k) / 2), shift(1, (k - x) / 2);
+        if (x > k) shift(1, (k - x) / 2), shift(0, (x - k) / 2);
     }
 };
 
