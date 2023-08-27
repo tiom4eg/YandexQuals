@@ -59,6 +59,7 @@ struct fig {
     bool operator<(fig o) { return (diag(0) == o.diag(0)) ? (diag(1) < o.diag(1)) : (diag(0) < o.diag(0)); } // OK
     void shift(int d, int k) { // moves by k on d-diag, OK
         if (won) return;
+        if (!k) return;
         //cout << "algo: " << x << ' ' << y << ", diags: " << diag(0) << ' ' << diag(1) << " | ";
         x += k, y += (d ? 1 : -1) * k;
         //cout << x << ' ' << y << ", diags: " << diag(0) << ' ' << diag(1) << endl;
@@ -69,7 +70,8 @@ struct fig {
     void move_to(int d, int k) { shift(!d, (k - diag(d)) / 2); } // moves figure to d-diag with value k, OK
     void jump_to(int k) { // jump to 0-diag with value k saving the same x coord, OK
         int x = diag(0);
-        shift(1, (k - x) / 2), shift(0, (x - k) / 2);
+        if (x < k) shift(0, (x - k) / 2), shift(1, (k - x) / 2);
+        if (x > k) shift(1, (k - x) / 2), shift(0, (x - k) / 2);
     }
 };
 
@@ -167,15 +169,29 @@ signed main() {
         a[0].clear(), a[1].clear();
         vi xs(5), ys(5);
         FOR(i, 0, 5) {
-            int x = (rng() % 201) - 100, y = (rng() % 201) - 100;
+            int x = (rng() % 21) - 10, y = (rng() % 21) - 10;
+            while (true) {
+                int f = 1;
+                FOR(j, 0, i) if (x == xs[j] && y == ys[j]) f = 0;
+                if (f) break;
+                x = (rng() % 21) - 10, y = (rng() % 21) - 10;
+            }
             xs[i] = x, ys[i] = y;
             fig f(x, y);
             a[f.color()].pb(f);
         }
-        kx = (rng() % 201) - 100, ky = (rng() % 201) - 100;
-        if (!solve()) {
+        int skx = (rng() % 21) - 10, sky = (rng() % 21) - 10;
+        while (true) {
+            int f = 1;
+            EACH(e, a[0]) if (skx + sky == e.diag(0) || skx - sky == e.diag(1)) f = 0;
+            EACH(e, a[0]) if (skx + sky == e.diag(0) || skx - sky == e.diag(1)) f = 0;
+            if (f) break;
+            skx = (rng() % 21) - 10, sky = (rng() % 21) - 10;
+        }
+        kx = skx, ky = sky;
+        if (solve()) {
             FOR(i, 0, 5) cout << xs[i] << ' ' << ys[i] << ' ';
-            cout << kx << ' ' << ky;
+            cout << skx << ' ' << sky;
             return 0;
         }
     }
