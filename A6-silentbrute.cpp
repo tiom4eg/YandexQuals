@@ -43,7 +43,7 @@ const ll INFLL = 1e18 + 7;
 
 #undef endl
 
-int won;
+int won, ops;
 int ax, ay; // aux
 int kx, ky; // king pos
 
@@ -60,6 +60,10 @@ struct fig {
     void shift(int d, int k) { // moves by k on d-diag, OK
         if (won) return;
         if (!k) return;
+        if (ops++ == 25) {
+            cout << "move limit exceeded" << endl;
+            exit(0);
+        }
         //cout << "algo: " << x << ' ' << y << ", diags: " << diag(0) << ' ' << diag(1) << " | ";
         x += k, y += (d ? 1 : -1) * k;
         //cout << x << ' ' << y << ", diags: " << diag(0) << ' ' << diag(1) << endl;
@@ -70,8 +74,7 @@ struct fig {
     void move_to(int d, int k) { shift(!d, (k - diag(d)) / 2); } // moves figure to d-diag with value k, OK
     void jump_to(int k) { // jump to 0-diag with value k saving the same x coord, OK
         int x = diag(0);
-        if (x < k) shift(0, (x - k) / 2), shift(1, (k - x) / 2);
-        if (x > k) shift(1, (k - x) / 2), shift(0, (x - k) / 2);
+        shift(1, (k - x) / 2), shift(0, (x - k) / 2);
     }
 };
 
@@ -135,16 +138,16 @@ int solve() {
     }
     /// phase 3 (block by 0-diag, 28 moves max)
     int d0 = kx + ky;
-    int l = d0 - 8;
-    a[!(d0 & 1)][0].jump_to(d0 - 7);
+    int l = d0 - 5;
+    a[d0 & 1][0].jump_to(d0 - 4);
     if (won) return 0;
-    a[d0 & 1][0].jump_to(d0 - 8);
+    a[!(d0 & 1)][0].jump_to(d0 - 5);
     if (won) return 0;
     d0 = kx + ky;
-    int r = d0 + 8;
-    a[!(d0 & 1)][1].jump_to(d0 + 7);
+    int r = d0 + 5;
+    a[d0 & 1][1].jump_to(d0 + 4);
     if (won) return 0;
-    a[d0 & 1][1].jump_to(d0 + 8);
+    a[!(d0 & 1)][1].jump_to(d0 + 5);
     if (won) return 0;
     while (l + 4 < r) {
         if (kx + ky > l + 2) a[l & 1][0].shift(1, 1), ++l;
@@ -158,6 +161,7 @@ int solve() {
     a[col][1].move_to(1, (kx - ky) + 2); // block top
     if (won) return 0;
     a[col][1].move_to(1, (kx - ky) + 2); // stalemate
+    //cout << ops << endl;
     if (won) return 0;
     return 1;
 }
@@ -165,28 +169,28 @@ int solve() {
 signed main() {
     //fastIO;
     while (true) {
-        won = 0;
+        won = 0, ops = 0;
         a[0].clear(), a[1].clear();
         vi xs(5), ys(5);
         FOR(i, 0, 5) {
-            int x = (rng() % 21) - 10, y = (rng() % 21) - 10;
+            int x = (rng() % 2000001) - 10, y = (rng() % 2000001) - 10;
             while (true) {
                 int f = 1;
                 FOR(j, 0, i) if (x == xs[j] && y == ys[j]) f = 0;
                 if (f) break;
-                x = (rng() % 21) - 10, y = (rng() % 21) - 10;
+                x = (rng() % 2000001) - 10, y = (rng() % 2000001) - 10;
             }
             xs[i] = x, ys[i] = y;
             fig f(x, y);
             a[f.color()].pb(f);
         }
-        int skx = (rng() % 21) - 10, sky = (rng() % 21) - 10;
+        int skx = (rng() % 2000001) - 10, sky = (rng() % 2000001) - 10;
         while (true) {
             int f = 1;
             EACH(e, a[0]) if (skx + sky == e.diag(0) || skx - sky == e.diag(1)) f = 0;
             EACH(e, a[0]) if (skx + sky == e.diag(0) || skx - sky == e.diag(1)) f = 0;
             if (f) break;
-            skx = (rng() % 21) - 10, sky = (rng() % 21) - 10;
+            skx = (rng() % 2000001) - 10, sky = (rng() % 2000001) - 10;
         }
         kx = skx, ky = sky;
         if (solve()) {
