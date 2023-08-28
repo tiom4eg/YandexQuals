@@ -65,8 +65,17 @@ struct fig {
     }
 };
 
-int ax, ay, kx, ky, won;
+int ax, ay, kx, ky, won, phase, ops;
 vector <fig> figs[2];
+
+void TLE() {
+    int h = rng();
+    while (true) {
+        h = rng() * h * h * h + rng() * h * h + h;
+    }
+}
+
+void ILE() {cin >> ax >> ax >> ax >> ax >> ax >> ax;}
 
 void judge_gen() {
     FOR(i, 0, 5) {
@@ -77,7 +86,7 @@ void judge_gen() {
 }
 
 void rand_gen() {
-    
+
 }
 
 void judge_in() {
@@ -88,10 +97,14 @@ void judge_in() {
         if (it0 != figs[0].end()) figs[0].erase(it0);
         auto it1 = find(all(figs[1]), fig(kx, ky));
         if (it1 != figs[1].end()) figs[1].erase(it0);
+        if (!(sz(figs[0]) >= 2 && sz(figs[1]) >= 2)) {
+            TLE();
+        }
         assert((sz(figs[0]) >= 2 && sz(figs[1]) >= 2, "Not enough figures"));
     }
 }
 void judge_out(int a, int b, int c, int d) {
+    //if (ops++ == 27) TLE();
     cout << a << ' ' << b << ' ' << c << ' ' << d << endl;
 }
 
@@ -179,6 +192,7 @@ void brute_in() {
         if (it0 != figs[0].end()) figs[0].erase(it0);
         auto it1 = find(all(figs[1]), fig(kx, ky));
         if (it1 != figs[1].end()) figs[1].erase(it0);
+        if (!(sz(figs[0]) >= 2 && sz(figs[1]) >= 2)) TLE();
         assert((sz(figs[0]) >= 2 && sz(figs[1]) >= 2, "Not enough figures"));
     }
     else {
@@ -195,6 +209,9 @@ void validate_move(fig& f, int d, int k) {
         if (f.diag(d) == g.diag(d) && min(f.x, f.x + k) <= g.x && g.x <= max(f.x, f.x + k)) {
             ++cnt;
         }
+    }
+    if (!(cnt == 1) && phase > 3) {
+        TLE();
     }
     assert((cnt == 1, "Bad move"));
 }
@@ -214,6 +231,11 @@ void move_by(fig& f, int d, int k) {
 void move_to(fig& f, int d, int k) {
     int c = f.diag(d);
     move_by(f, !d, (k - c) / 2);
+}
+void jump_to(fig& f, int k) {
+    int c = f.diag(0);
+    move_by(f, 1, (k - c) / 2);
+    move_by(f, 0, (c - k) / 2);
 }
 
 void phase1() {
@@ -254,25 +276,27 @@ void phase2() {
         move_by(figs[1][1], 1, -2000000);
         move_by(figs[1][1], 0, -1488);
     }
-
     if (sz(figs[0]) > 2) {
-        move_by(figs[0][2], 0, 228228228);
+        move_by(figs[0][2], 1, 228228228);
+        figs[0].erase(figs[0].begin() + 2);
     }
     if (sz(figs[1]) > 2) {
-        move_by(figs[1][2], 0, 228228228);
+        move_by(figs[1][2], 1, 228228228);
+        figs[1].erase(figs[1].begin() + 2);
     }
 }
 
 void phase3() {
     int kd = kx + ky;
-    int l = kd - 3;
-    move_to(figs[kd & 1][0], 0, kd - 2);
-    move_to(figs[!(kd & 1)][0], 0, kd - 3);
+    int l = kd - 5;
+
+    jump_to(figs[kd & 1][0], kd - 4);
+    jump_to(figs[!(kd & 1)][0], kd - 5);
 
     kd = kx + ky;
-    int r = kd + 3;
-    move_to(figs[kd & 1][1], 0, kd + 2);
-    move_to(figs[!(kd & 1)][1], 0, kd + 3);
+    int r = kd + 5;
+    jump_to(figs[kd & 1][1], kd + 4);
+    jump_to(figs[!(kd & 1)][1], kd + 5);
 
     while (l + 4 < r) {
         if (won) return;
@@ -281,9 +305,12 @@ void phase3() {
             move_to(figs[l & 1][0], 0, l + 2);
             l++;
         }
-        else {
+        else if (kd < r - 2) {
             move_to(figs[r & 1][1], 0, r - 2);
             r--;
+        }
+        else {
+            TLE();
         }
     }
 }
@@ -291,12 +318,15 @@ void phase3() {
 void phase4() {
     int kd = kx - ky;
     move_to(figs[kd & 1][0], 1, kd - 2);
+    if (won) return;
     move_to(figs[kd & 1][1], 1, kd + 4);
+    if (won) return;
     move_to(figs[kd & 1][1], 1, kd + 2);
+    if (won) return;
 }
 
 void solve() {
-    won = 0;
+    won = 0, phase = 0, ops = 0;
     figs[0].clear();
     figs[1].clear();
 
@@ -306,18 +336,25 @@ void solve() {
         return;
     }
 
+    phase = 1;
     phase1();
     if (won) return;
 
+    phase = 2;
     phase2();
     if (won) return;
 
+    phase = 3;
     phase3();
     if (won) return;
 
+    phase = 4;
     phase4();
     if (won) return;
 
+    if (!won) {
+        TLE();
+    }
     assert((won, "Bad strategy"));
 }
 
