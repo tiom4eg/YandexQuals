@@ -136,7 +136,7 @@ void bot_in() {
         auto it0 = find(all(figs[0]), fig(kx, ky));
         if (it0 != figs[0].end()) figs[0].erase(it0);
         auto it1 = find(all(figs[1]), fig(kx, ky));
-        if (it1 != figs[1].end()) figs[1].erase(it0);
+        if (it1 != figs[1].end()) figs[1].erase(it1);
 
         assert((sz(figs[0]) >= 2 && sz(figs[1]) >= 2, "Not enough figures"));
 
@@ -187,7 +187,7 @@ void brute_in() {
         auto it0 = find(all(figs[0]), fig(kx, ky));
         if (it0 != figs[0].end()) figs[0].erase(it0);
         auto it1 = find(all(figs[1]), fig(kx, ky));
-        if (it1 != figs[1].end()) figs[1].erase(it0);
+        if (it1 != figs[1].end()) figs[1].erase(it1);
 
         assert((sz(figs[0]) >= 2 && sz(figs[1]) >= 2, "Not enough figures"));
     }
